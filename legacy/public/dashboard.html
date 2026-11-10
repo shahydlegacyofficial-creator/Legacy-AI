@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Legacy — Control</title>
+<link rel="icon" type="image/png" href="/legacy_studios_logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* Legacy Control — an operations HUD, not a marketing page.
+     Pattern: data-dense executive. Style: terminal/heads-up display.
+     House palette kept (warm ember on near-black) rather than borrowing
+     someone else's red — this is Shahyd's system, it should look like his.
+     Anti-patterns deliberately avoided: no fake progress, no zeros standing
+     in for missing data, no decorative charts with nothing behind them. */
+  :root {
+    --ink:   #16130f;
+    --smoke: #1c1813;
+    --panel: #221d17;
+    --raise: #2a231b;
+    --line:  #352c22;
+    --sand:  #e8dfd0;
+    --dim:   #8a7f6e;
+    --faint: #5f5648;
+    --ember: #e5a34d;
+    --alert: #c96a4a;
+    --ok:    #8fa37e;
+    --ig:    #d98a63;
+    --yt:    #c96a4a;
+    --tt:    #7fa0a8;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background:
+      radial-gradient(1100px 480px at 72% -12%, rgba(229,163,77,0.07), transparent 62%),
+      var(--ink);
+    color: var(--sand);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-size: 14px;
+    padding: 14px 16px 40px;
+    min-height: 100vh;
+  }
+  .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+  .lbl {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--dim);
+  }
+
+  /* ---------- header ---------- */
+  header {
+    display: flex; align-items: center; gap: 14px;
+    padding-bottom: 12px; margin-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px; font-weight: 600; letter-spacing: .22em;
+    text-transform: uppercase; white-space: nowrap;
+  }
+  h1 .slash { color: var(--ember); }
+  .live {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10.5px;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--dim);
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); flex: none; }
+  .dot.warn { background: var(--ember); }
+  .dot.off  { background: var(--faint); }
+  .pulse { animation: pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+  #clock { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--dim); white-space: nowrap; }
+  .spacer { flex: 1 }
+  .hbtn {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    letter-spacing: .12em; text-transform: uppercase;
+    background: var(--panel); color: var(--sand);
+    border: 1px solid var(--line); border-radius: 4px;
+    padding: 7px 13px; cursor: pointer; transition: all .16s ease;
+  }
+  .hbtn:hover { border-color: var(--ember); color: var(--ember); }
+  .hbtn:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+  .hbtn.on { border-color: var(--ember); color: var(--ember); }
+
+  /* ---------- weather strip ---------- */
+  #wx {
+    display: flex; align-items: baseline; gap: 10px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--dim);
+    white-space: nowrap;
+  }
+  #wx b { color: var(--sand); font-weight: 500; font-size: 14px; }
+  #wx .sep { color: var(--faint) }
+
+  /* ---------- bracketed panel ---------- */
+  .box {
+    position: relative; background: var(--smoke);
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 14px 16px; margin-bottom: 12px;
+  }
+  .box::before, .box::after {
+    content: ''; position: absolute; width: 9px; height: 9px;
+    border-color: var(--ember); border-style: solid; opacity: .55;
+  }
+  .box::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; border-radius: 6px 0 0 0; }
+  .box::after  { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; border-radius: 0 0 6px 0; }
+  .boxhead { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+  .count { color: var(--ember); font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+
+  /* ---------- token burn ---------- */
+  #burnRow { display: flex; align-items: center; gap: 18px; }
+  #burnPct { font-size: 40px; font-weight: 600; line-height: 1; letter-spacing: -.02em; color: var(--ember); }
+  #burnPct span { font-size: 17px; color: var(--dim); }
+  .track {
+    position: relative; flex: 1; height: 30px; border-radius: 4px;
+    background: repeating-linear-gradient(135deg, #1a1611 0 7px, #201a14 7px 14px);
+    border: 1px solid var(--line); overflow: hidden;
+  }
+  .fill {
+    position: absolute; inset: 0 auto 0 0;
+    background: linear-gradient(90deg, rgba(229,163,77,.35), var(--ember));
+    border-radius: 3px 0 0 3px; transition: width .5s ease;
+  }
+  #burnRight { text-align: right; white-space: nowrap; }
+  #burnNum { font-family: 'IBM Plex Mono', monospace; font-size: 21px; font-weight: 600; }
+  .scale { display: flex; justify-content: space-between; margin-top: 5px; }
+  .scale span { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--faint); }
+
+  /* ---------- platform cards ---------- */
+  #reach { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 12px; margin-bottom: 12px; }
+  .pcard {
+    position: relative; background: var(--smoke); border: 1px solid var(--line);
+    border-radius: 6px; padding: 14px 16px; overflow: hidden;
+  }
+  .pcard .glow {
+    position: absolute; right: -32px; top: -32px; width: 130px; height: 130px;
+    border-radius: 50%; opacity: .16; filter: blur(26px); pointer-events: none;
+  }
+  .pcard .num { font-family: 'IBM Plex Mono', monospace; font-size: 27px; font-weight: 600; letter-spacing: -.01em; margin-top: 7px; }
+  .pcard .sub { font-size: 11px; color: var(--dim); margin-top: 5px; }
+  .pcard .stat { position: absolute; top: 13px; right: 14px; }
+  .pcard.total { border-color: rgba(229,163,77,.42); }
+  .pcard.total .num { color: var(--ember); }
+  .pcard.dead .num { color: var(--faint); font-size: 15px; font-weight: 400; }
+
+  /* ---------- grid ---------- */
+  main { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 12px; align-items: start; }
+  .row { padding: 9px 0; border-bottom: 1px solid rgba(53,44,34,.55); font-size: 13px; line-height: 1.5; }
+  .row:last-child { border-bottom: 0 }
+  .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--faint); margin-top: 3px; }
+  .empty { color: var(--faint); font-size: 12.5px; padding: 5px 0 }
+  .scroll { max-height: 340px; overflow-y: auto }
+  .scroll::-webkit-scrollbar { width: 5px }
+  .scroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px }
+
+  /* ---------- running agents ---------- */
+  .run { padding: 10px 0; border-bottom: 1px solid rgba(53,44,34,.55) }
+  .run:last-child { border-bottom: 0 }
+  .runtop { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px }
+  .runtop b { font-size: 13px; font-weight: 600 }
+  .runbar { height: 4px; background: var(--raise); border-radius: 2px; overflow: hidden }
+  .runbar i { display: block; height: 100%; background: var(--ember); transition: width .4s ease }
+
+  /* ---------- quick actions ---------- */
+  #acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 8px }
+  .act {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10.5px;
+    letter-spacing: .1em; text-transform: uppercase;
+    background: var(--panel); color: var(--sand);
+    border: 1px solid var(--line); border-radius: 5px;
+    padding: 13px 9px; cursor: pointer; text-align: center; transition: all .16s ease;
+  }
+  .act:hover { border-color: var(--ember); color: var(--ember) }
+  .act:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px }
+  .act[disabled] { opacity: .45; cursor: wait }
+
+  /* ---------- terminal ---------- */
+  #term {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.65;
+    color: var(--dim); white-space: pre-wrap; word-break: break-word;
+    max-height: 190px; overflow-y: auto;
+  }
+  #term .you { color: var(--ember) }
+
+  /* ---------- posts ---------- */
+  .post { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(53,44,34,.55) }
+  .post:last-child { border-bottom: 0 }
+  .post .body { flex: 1; min-width: 0 }
+  .post .cap { font-size: 12.5px; line-height: 1.45; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical }
+  .post .nums { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--faint); margin-top: 4px }
+  .post .nums b { color: var(--dim); font-weight: 500 }
+  .post a { color: var(--ember); text-decoration: none; font-size: 11px }
+
+  /* ---------- activity chips ---------- */
+  .feedrow { display: flex; gap: 9px; align-items: flex-start; padding: 7px 0; border-bottom: 1px solid rgba(53,44,34,.4) }
+  .feedrow:last-child { border-bottom: 0 }
+  .chip {
+    font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: .09em;
+    text-transform: uppercase; padding: 3px 7px; border-radius: 3px;
+    border: 1px solid var(--line); color: var(--dim); background: var(--panel);
+    white-space: nowrap; flex: none;
+  }
+  .chip.ok   { color: var(--ok); border-color: rgba(143,163,126,.45) }
+  .chip.warn { color: var(--ember); border-color: rgba(229,163,77,.42) }
+  .chip.bad  { color: var(--alert); border-color: rgba(201,106,74,.45) }
+  .feedtxt { font-size: 12px; color: var(--dim); line-height: 1.5; min-width: 0 }
+
+  /* ---------- approvals ---------- */
+  .approve { background: rgba(229,163,77,.06); border-color: rgba(229,163,77,.4) }
+  .abtns { display: flex; gap: 7px; margin-top: 8px }
+  .abtn { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; padding: 6px 13px; border-radius: 4px; cursor: pointer; border: 1px solid var(--line); background: var(--panel); color: var(--sand); transition: all .16s ease }
+  .abtn.yes:hover { border-color: var(--ok); color: var(--ok) }
+  .abtn.no:hover  { border-color: var(--alert); color: var(--alert) }
+
+  input {
+    background: var(--ink); border: 1px solid var(--line); border-radius: 4px;
+    color: var(--sand); padding: 8px 10px; font-family: inherit; font-size: 12.5px;
+  }
+  input:focus { outline: none; border-color: var(--ember) }
+  #quickAdd { display: flex; gap: 6px; margin-top: 10px }
+  #taskInput { flex: 1; min-width: 0 }
+  #dueInput { width: 96px }
+  .done { color: var(--faint); text-decoration: line-through }
+
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important } }
+  @media (max-width: 700px) {
+    body { padding: 10px }
+    #burnRow { flex-wrap: wrap; gap: 12px }
+    .track { order: 3; flex-basis: 100% }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Legacy <span class="slash">//</span> Control</h1>
+  <div class="live"><span class="dot pulse" id="liveDot"></span><span id="liveTxt">live</span></div>
+  <div id="clock">—</div>
+  <div id="wx" title="Open-Meteo"><span class="lbl">wx</span><span class="empty">—</span></div>
+  <div class="spacer"></div>
+  <button class="hbtn" id="talkBtn">talk</button>
+  <button class="hbtn" id="pauseBtn">pause</button>
+  <button class="hbtn" id="refreshBtn" title="Refresh now">↻</button>
+  <a class="hbtn" href="/brain" target="_blank" rel="noopener" title="The second brain, as a map" style="text-decoration:none;display:inline-flex;align-items:center">brain</a>
+</header>
+
+<section class="box" id="burnBox">
+  <div class="boxhead"><span class="lbl">token burn · this session</span><span class="dot" id="burnDot"></span></div>
+  <div id="burnRow">
+    <div id="burnPct">—<span>%</span></div>
+    <div style="flex:1">
+      <div class="track"><div class="fill" id="burnFill" style="width:0%"></div></div>
+      <div class="scale" id="burnScale"></div>
+    </div>
+    <div id="burnRight">
+      <div id="burnNum">—</div>
+      <div class="lbl" id="burnSaved">&nbsp;</div>
+    </div>
+  </div>
+</section>
+
+<section id="reach"></section>
+
+<section class="box" id="runBox" style="display:none">
+  <div class="boxhead"><span class="lbl">running now</span><span class="count" id="runCount"></span></div>
+  <div id="runList"></div>
+</section>
+
+<section class="box approve" id="approveBox" style="display:none">
+  <div class="boxhead"><span class="lbl">awaiting your approval</span><span class="count" id="approveCount"></span></div>
+  <div id="approveList"></div>
+</section>
+
+<section class="box">
+  <div class="boxhead"><span class="lbl">quick actions</span></div>
+  <div id="acts"></div>
+  <div id="term" class="mono" style="margin-top:12px">&gt; ready</div>
+</section>
+
+<main>
+  <div class="box">
+    <div class="boxhead"><span class="lbl">tasks</span><span class="count" id="taskCount"></span></div>
+    <div id="taskList" class="scroll"></div>
+    <div id="quickAdd">
+      <input id="taskInput" placeholder="Quick add a task…" />
+      <input id="dueInput" placeholder="due (opt.)" />
+      <button class="hbtn" id="addTaskBtn">add</button>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="boxhead"><span class="lbl">latest posts</span><span class="count" id="postCount"></span></div>
+    <div id="postList" class="scroll"></div>
+  </div>
+
+  <div class="box">
+    <div class="boxhead"><span class="lbl">notices</span><span class="count" id="noticeCount"></span></div>
+    <div id="noticeList" class="scroll"></div>
+  </div>
+
+  <div class="box">
+    <div class="boxhead"><span class="lbl">watching for</span><span class="count" id="trigCount"></span></div>
+    <div id="trigList" class="scroll"></div>
+  </div>
+
+  <div class="box">
+    <div class="boxhead"><span class="lbl">what she's learned</span><span class="count" id="lessonCount"></span></div>
+    <div id="lessonList" class="scroll"></div>
+  </div>
+
+  <div class="box">
+    <div class="boxhead"><span class="lbl">activity</span></div>
+    <div id="auditList" class="scroll"></div>
+  </div>
+
+  <div class="box">
+    <div class="boxhead"><span class="lbl">memory</span><span class="count" id="memCount"></span></div>
+    <div id="memList" class="scroll"></div>
+  </div>
+
+  <div class="box">
+    <div class="boxhead"><span class="lbl">drafts</span><span class="count" id="draftCount"></span></div>
+    <div id="draftList" class="scroll"></div>
+  </div>
+</main>
+<script>
+/* Legacy Control. One rule everywhere below: never invent a number.
+   A platform that isn't connected says so; it does not show a zero. */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+const num = (n) => Number(n ?? 0).toLocaleString('en-US');
+const compact = (n) => n >= 1e6 ? (n/1e6).toFixed(2)+'M' : n >= 1e3 ? (n/1e3).toFixed(2)+'K' : String(n);
+
+function ago(iso) {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (!isFinite(ms)) return '';
+  const m = Math.floor(ms/60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return m + 'm ago';
+  const h = Math.floor(m/60);
+  if (h < 24) return h + 'h ago';
+  return Math.floor(h/24) + 'd ago';
+}
+
+/* ---------------- clock + weather ---------------- */
+setInterval(() => {
+  $('clock').textContent = new Date().toLocaleString('en-US', {
+    weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit',
+  });
+}, 1000);
+
+function drawWeather(w) {
+  if (!w) { $('wx').innerHTML = '<span class="lbl">wx</span><span class="empty">offline</span>'; return; }
+  $('wx').innerHTML =
+    '<span class="lbl">' + esc(w.place) + '</span>' +
+    '<b>' + w.temp + '°</b>' +
+    '<span>' + esc(w.text) + '</span>' +
+    '<span class="sep">·</span><span>feels ' + w.feelsLike + '°</span>' +
+    '<span class="sep">·</span><span>' + w.rainChance + '% rain</span>' +
+    '<span class="sep">·</span><span>' + w.high + '/' + w.low + '°</span>';
+}
+
+/* ---------------- token burn ---------------- */
+function drawBurn(b) {
+  if (!b || !b.turns) {
+    $('burnPct').innerHTML = '0<span>%</span>';
+    $('burnNum').textContent = 'no calls yet';
+    $('burnSaved').textContent = '';
+    $('burnFill').style.width = '0%';
+    $('burnDot').className = 'dot off';
+    return;
+  }
+  const pct = b.usedPct ?? 0;
+  $('burnPct').innerHTML = pct + '<span>%</span>';
+  $('burnFill').style.width = Math.max(pct, 0.4) + '%';
+  $('burnNum').innerHTML = compact(b.billed) + (b.budget ? ' <span class="lbl">/ ' + compact(b.budget) + '</span>' : '');
+  $('burnSaved').textContent = b.cacheRead > 0
+    ? 'caching saved ' + b.savedPct + '% · ' + b.turns + ' calls'
+    : b.turns + ' calls';
+  $('burnDot').className = 'dot pulse';
+  if (b.budget) {
+    const marks = [0, .25, .5, .75, 1].map((f) => '<span>' + compact(Math.round(b.budget*f)) + '</span>');
+    $('burnScale').innerHTML = marks.join('');
+  }
+}
+
+/* ---------------- reach ---------------- */
+const TINT = { instagram:'var(--ig)', youtube:'var(--yt)', tiktok:'var(--tt)', facebook:'#6f8bb0' };
+function drawReach(r) {
+  if (!r) { $('reach').innerHTML = ''; return; }
+  const cards = r.platforms.map((p) => {
+    const tint = TINT[p.key] || 'var(--dim)';
+    if (typeof p.followers !== 'number') {
+      return '<div class="pcard dead"><div class="lbl">' + esc(p.name) + '</div>' +
+        '<div class="num">not connected</div>' +
+        '<div class="sub">' + (p.selfReported ? 'tell me the number and I\'ll keep it' : 'no API key set') + '</div>' +
+        '<span class="stat dot off"></span></div>';
+    }
+    return '<div class="pcard">' +
+      '<div class="glow" style="background:' + tint + '"></div>' +
+      '<div class="lbl">' + esc(p.name) + '</div>' +
+      '<div class="num">' + num(p.followers) + '</div>' +
+      '<div class="sub">' + esc(p.extra || (p.selfReported ? 'you told me this' : 'live')) + '</div>' +
+      (p.videoViews28 != null ? '<div class="sub">' + num(p.videoViews28) + ' video views · 28d</div>' : '') +
+      '<span class="stat dot' + (p.live ? '' : ' warn') + '"></span></div>';
+  });
+  cards.push('<div class="pcard total">' +
+    '<div class="glow" style="background:var(--ember)"></div>' +
+    '<div class="lbl">total reach</div>' +
+    '<div class="num">' + num(r.total) + '</div>' +
+    '<div class="sub">across ' + r.countedPlatforms + ' of ' + r.totalPlatforms + ' platforms</div></div>');
+  $('reach').innerHTML = cards.join('');
+}
+
+/* ---------------- running agents ---------------- */
+function drawRuns(runs) {
+  const box = $('runBox');
+  if (!runs || !runs.length) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  $('runCount').textContent = '· ' + runs.length;
+  $('runList').innerHTML = runs.map((r) =>
+    '<div class="run"><div class="runtop"><span class="dot pulse"></span>' +
+    '<b>' + esc(r.agent) + '</b>' +
+    '<span class="meta" style="margin:0">' + (r.tool ? esc(r.tool) : 'thinking') +
+    ' · step ' + r.round + '/' + r.maxRounds + ' · ' + r.seconds + 's</span></div>' +
+    '<div class="runbar"><i style="width:' + r.pct + '%"></i></div>' +
+    (r.label ? '<div class="meta">' + esc(r.label) + '</div>' : '') +
+    '</div>').join('');
+}
+
+/* ---------------- approvals ---------------- */
+function drawApprovals(actions) {
+  const box = $('approveBox');
+  if (!actions || !actions.length) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  $('approveCount').textContent = '· ' + actions.length;
+  $('approveList').innerHTML = actions.map((a) =>
+    '<div class="row"><div>' + esc(a.summary) + '</div>' +
+    '<div class="meta">#' + esc(a.id) + ' · expires in ' + (a.expiresInMinutes ?? '?') + 'm</div>' +
+    '<div class="abtns">' +
+    '<button class="abtn yes" data-approve="' + esc(a.id) + '">approve</button>' +
+    '<button class="abtn no" data-deny="' + esc(a.id) + '">cancel</button></div></div>').join('');
+}
+
+/* ---------------- posts ---------------- */
+function drawPosts(posts) {
+  if (!posts) { $('postList').innerHTML = '<div class="empty">Instagram isn\'t connected.</div>'; $('postCount').textContent=''; return; }
+  if (!posts.length) { $('postList').innerHTML = '<div class="empty">No posts yet.</div>'; return; }
+  $('postCount').textContent = '· ' + posts.length;
+  $('postList').innerHTML = posts.map((p) =>
+    '<div class="post"><div class="body">' +
+    '<div class="cap">' + (p.caption ? esc(p.caption) : '<span class="empty">no caption</span>') + '</div>' +
+    '<div class="nums"><b>' + (p.likes == null ? '—' : num(p.likes)) + '</b> likes · ' +
+    '<b>' + (p.comments == null ? '—' : num(p.comments)) + '</b> comments · ' +
+    esc((p.type || '').toLowerCase()) + ' · ' + ago(p.at) + '</div></div>' +
+    (p.link ? '<a href="' + esc(p.link) + '" target="_blank" rel="noopener">open</a>' : '') +
+    '</div>').join('');
+}
+
+/* ---------------- activity feed ---------------- */
+const TONE = { action_denied:'bad', action_approved:'ok', action_held:'warn', selfcheck_flagged:'warn',
+  trigger_fired:'warn', lesson_learned:'ok', subagent_start:'ok', model_call:'', tool_run:'' };
+function drawAudit(audit) {
+  if (!audit || !audit.length) { $('auditList').innerHTML = '<div class="empty">Nothing yet.</div>'; return; }
+  $('auditList').innerHTML = audit.map((e) => {
+    const tag = String(e.type || 'event').replace(/_/g, '-');
+    const tone = TONE[e.type] ?? '';
+    let txt = e.summary || e.message || e.name || e.tool || e.text || '';
+    if (e.type === 'model_call') txt = (e.inputTokens ?? '?') + '→' + (e.outputTokens ?? '?') + ' tokens' + (e.effort && e.effort !== 'normal' ? ' · ' + e.effort : '');
+    if (e.type === 'trigger_fired') txt = (e.name || '') + ' — ' + (e.subject || '');
+    if (e.type === 'selfcheck_flagged') txt = (e.concerns || []).join('; ');
+    return '<div class="feedrow"><span class="chip ' + tone + '">' + esc(tag) + '</span>' +
+      '<span class="feedtxt">' + esc(txt) + '</span></div>';
+  }).join('');
+}
+
+/* ---------------- simple lists ---------------- */
+function drawTasks(tasks) {
+  const open = tasks.filter((t) => !t.done);
+  $('taskCount').textContent = '· ' + open.length;
+  const rows = tasks.slice(0, 40).map((t) =>
+    '<div class="row"><span class="' + (t.done ? 'done' : '') + '">' + (t.done ? '✓ ' : '') + esc(t.title) + '</span>' +
+    (t.due ? '<div class="meta">due ' + esc(String(t.due).slice(0, 16)) + '</div>' : '') +
+    (t.done ? '' : '<div class="abtns"><button class="abtn" data-task="' + t.id + '">done</button></div>') +
+    '</div>');
+  $('taskList').innerHTML = rows.join('') || '<div class="empty">Nothing on the list.</div>';
+}
+function drawList(el, items, render, countEl) {
+  if (countEl) $(countEl).textContent = items.length ? '· ' + items.length : '';
+  $(el).innerHTML = items.length ? items.map(render).join('') : '<div class="empty">Nothing here.</div>';
+}
+
+/* ---------------- quick actions ---------------- */
+const ACTIONS = [
+  ['morning brief',   'Give me my morning brief.'],
+  ['what needs me',   'What needs my attention right now?'],
+  ['money today',     'How is the money looking today?'],
+  ['shop status',     'Give me the shop summary — orders, unpaid, stock.'],
+  ['chase unpaid',    'Which orders are unpaid and what would you send?'],
+  ['inbox brief',     'Anything important in my email?'],
+  ['phone brief',     'Anything on my phone I should know about?'],
+  ['today\'s plan',   'Plan my day from my tasks and bookings.'],
+  ['what did you learn', 'What have you learned about how I work?'],
+  ['token report',    'Give me the token report.'],
+];
+$('acts').innerHTML = ACTIONS.map((a, i) =>
+  '<button class="act" data-act="' + i + '">' + esc(a[0]) + '</button>').join('');
+
+async function runAction(i) {
+  const [label, prompt] = ACTIONS[i];
+  const btn = document.querySelector('[data-act="' + i + '"]');
+  document.querySelectorAll('.act').forEach((b) => b.disabled = true);
+  $('term').innerHTML = '<span class="you">&gt; ' + esc(label) + '</span>\n';
+  try {
+    const res = await fetch('/text-turn', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: prompt }),
+    });
+    const text = await res.text();
+    // The turn endpoint streams; show whatever came back as plain text.
+    const clean = text.replace(/^data:\s*/gm, '').split('\n')
+      .map((l) => { try { const o = JSON.parse(l); return o.text ?? o.delta ?? ''; } catch { return l; } })
+      .join('').trim();
+    $('term').innerHTML += esc(clean || '(no reply)');
+  } catch (e) {
+    $('term').innerHTML += '<span style="color:var(--alert)">could not reach Legacy — ' + esc(e.message) + '</span>';
+  } finally {
+    document.querySelectorAll('.act').forEach((b) => b.disabled = false);
+    load();
+  }
+}
+
+/* ---------------- load ---------------- */
+let failures = 0;
+async function load() {
+  let d;
+  try {
+    d = await (await fetch('/dashboard-data')).json();
+    failures = 0;
+    $('liveDot').className = 'dot pulse';
+    $('liveTxt').textContent = d.paused ? 'paused' : 'live';
+  } catch {
+    failures++;
+    $('liveDot').className = 'dot off';
+    $('liveTxt').textContent = 'offline';
+    return;
+  }
+  drawWeather(d.weather);
+  drawBurn(d.burn);
+  drawReach(d.reach);
+  drawRuns(d.runs);
+  drawApprovals(d.actions);
+  drawPosts(d.posts);
+  drawAudit(d.audit);
+  drawTasks(d.tasks || []);
+  drawList('noticeList', d.notices || [], (n) =>
+    '<div class="row">' + esc(n.message) + '<div class="abtns"><button class="abtn" data-notice="' + esc(n.key) + '">dismiss</button></div></div>', 'noticeCount');
+  drawList('trigList', d.triggers || [], (t) =>
+    '<div class="row">' + (t.paused ? '<span class="chip">paused</span> ' : '') + esc(t.name) +
+    '<div class="meta">' + esc(t.event) + ' → ' + esc(t.action?.type || '') + (t.firedCount ? ' · fired ' + t.firedCount + '×' : '') + '</div></div>', 'trigCount');
+  drawList('lessonList', d.lessons || [], (l) =>
+    '<div class="row">' + esc(l.text) + '<div class="meta">' + esc(l.learnedOn || '') + '</div></div>', 'lessonCount');
+  drawList('memList', d.memory || [], (m, i) =>
+    '<div class="row">' + esc(typeof m === 'string' ? m : m.text || m.fact || JSON.stringify(m)) + '</div>', 'memCount');
+  drawList('draftList', d.drafts || [], (f) =>
+    '<div class="row">' + esc(String(f).replace(/\.md$/, '')) + '</div>', 'draftCount');
+  $('pauseBtn').classList.toggle('on', Boolean(d.paused));
+  $('pauseBtn').textContent = d.paused ? 'resume' : 'pause';
+}
+
+/* ---------------- events ---------------- */
+document.addEventListener('click', async (e) => {
+  const t = e.target;
+  if (t.dataset.act !== undefined) return runAction(Number(t.dataset.act));
+  if (t.dataset.task) { await fetch('/complete-task', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: t.dataset.task }) }); return load(); }
+  if (t.dataset.notice) { await fetch('/dismiss-notice', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ key: t.dataset.notice }) }); return load(); }
+  if (t.dataset.approve) { await fetch('/action-decision', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: t.dataset.approve, approve: true }) }); return load(); }
+  if (t.dataset.deny) { await fetch('/action-decision', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: t.dataset.deny, approve: false }) }); return load(); }
+});
+$('addTaskBtn').onclick = async () => {
+  const title = $('taskInput').value.trim();
+  if (!title) return;
+  await fetch('/add-task', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title, due: $('dueInput').value.trim() || undefined }) });
+  $('taskInput').value = ''; $('dueInput').value = ''; load();
+};
+$('taskInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('addTaskBtn').click(); });
+$('pauseBtn').onclick = async () => { await fetch('/pause', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({}) }); load(); };
+$('refreshBtn').onclick = load;
+$('talkBtn').onclick = () => { window.location.href = '/'; };
+
+load();
+setInterval(load, 5000);
+</script>
+</body>
+</html>

@@ -1,1 +1,323 @@
-# Source import in progress.
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Second brain — Legacy</title>
+<link rel="icon" type="image/png" href="/legacy_studios_logo.png">
+<style>
+  :root{
+    --bg:#0b0b0d; --panel:#141418; --line:#26262e; --ink:#ece9e4;
+    --dim:#8a867f; --ember:#f0a03a; --teal:#2dd4a8;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+  #wrap{display:flex;height:100%}
+  canvas{flex:1;display:block;cursor:grab}
+  canvas.dragging{cursor:grabbing}
+
+  #side{width:340px;flex:0 0 340px;border-left:1px solid var(--line);background:var(--panel);
+    display:flex;flex-direction:column;overflow:hidden}
+  header{padding:16px 18px 12px;border-bottom:1px solid var(--line)}
+  h1{margin:0 0 2px;font-size:15px;letter-spacing:.14em;text-transform:uppercase;color:var(--ember)}
+  .sub{color:var(--dim);font-size:12px}
+
+  #search{margin:12px 18px 0;width:calc(100% - 36px);background:#0e0e12;border:1px solid var(--line);
+    color:var(--ink);border-radius:8px;padding:8px 10px;font:inherit;font-size:13px}
+  #search:focus{outline:none;border-color:var(--ember)}
+
+  #legend{padding:12px 18px;display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--line)}
+  .chip{display:flex;align-items:center;gap:6px;padding:4px 9px;border:1px solid var(--line);
+    border-radius:999px;font-size:11.5px;cursor:pointer;user-select:none;color:var(--dim);background:#0e0e12}
+  .chip.on{color:var(--ink);border-color:currentColor}
+  .chip i{width:8px;height:8px;border-radius:50%;background:currentColor;display:block}
+  .chip b{font-weight:600;color:var(--dim);font-size:10.5px}
+
+  #detail{flex:1;overflow:auto;padding:16px 18px}
+  #detail .empty{color:var(--dim);font-size:13px;line-height:1.6}
+  .kind{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+  .title{font-size:16px;font-weight:650;margin:0 0 4px;line-height:1.3}
+  .meta{color:var(--dim);font-size:12px;margin-bottom:12px}
+  .body{white-space:pre-wrap;font-size:13px;color:#cdc9c2;border-top:1px solid var(--line);padding-top:12px}
+  .rel{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+  .rel h3{margin:0 0 8px;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);font-weight:600}
+  .rel a{display:flex;align-items:center;gap:8px;padding:5px 0;color:var(--ink);text-decoration:none;font-size:13px;cursor:pointer}
+  .rel a:hover{color:var(--ember)}
+  .rel a i{width:7px;height:7px;border-radius:50%;flex:0 0 7px}
+  .rel a span{color:var(--dim);font-size:11px;margin-left:auto}
+  img.av{width:46px;height:46px;border-radius:50%;float:right;margin:0 0 8px 10px;border:1px solid var(--line)}
+  #foot{padding:10px 18px;border-top:1px solid var(--line);color:var(--dim);font-size:11.5px;display:flex;justify-content:space-between;gap:8px}
+  #foot button{background:none;border:1px solid var(--line);color:var(--dim);border-radius:6px;
+    padding:3px 9px;font:inherit;font-size:11px;cursor:pointer}
+  #foot button:hover{color:var(--ink);border-color:var(--ember)}
+  #note{position:absolute;left:18px;bottom:16px;color:var(--dim);font-size:11.5px;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div id="side">
+    <header>
+      <h1>Second brain</h1>
+      <div class="sub" id="stats">reading…</div>
+    </header>
+    <input id="search" placeholder="Search everything…" autocomplete="off">
+    <div id="legend"></div>
+    <div id="detail"><div class="empty">Click anything in the map to read it.<br><br>Drag to move around, scroll to zoom, drag a node to pull it out of the tangle.</div></div>
+    <div id="foot"><span id="built"></span><button id="refresh">Rebuild</button></div>
+  </div>
+</div>
+<div id="note"></div>
+
+<script type="module">
+const $ = (s) => document.querySelector(s);
+const canvas = $('#c'), ctx = canvas.getContext('2d');
+let G = { nodes: [], edges: [], types: {}, counts: {} };
+let P = new Map();                 // id -> {x,y,vx,vy}
+let off = { x: 0, y: 0 }, zoom = 1;
+let hidden = new Set(), selected = null, hover = null, query = '';
+let drag = null, panning = null;
+
+function size() {
+  const r = canvas.getBoundingClientRect();
+  canvas.width = r.width * devicePixelRatio;
+  canvas.height = r.height * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+}
+addEventListener('resize', () => { size(); draw(); });
+
+const visible = () => G.nodes.filter((n) => !hidden.has(n.type));
+const colorOf = (n) => n.color || G.types[n.type]?.color || '#888';
+const matches = (n) => query && (`${n.label} ${n.detail ?? ''} ${n.body ?? ''}`).toLowerCase().includes(query);
+
+/* ---- layout: a plain force sim, cooled and then left alone ---- */
+function layout(iterations = 260) {
+  const ns = visible();
+  const ids = new Set(ns.map((n) => n.id));
+  const es = G.edges.filter((e) => ids.has(e.from) && ids.has(e.to));
+  const r = canvas.getBoundingClientRect();
+  const cx = r.width / 2, cy = r.height / 2;
+
+  for (const n of ns) {
+    if (!P.has(n.id)) {
+      const a = Math.random() * Math.PI * 2, d = 60 + Math.random() * Math.min(r.width, r.height) * 0.35;
+      P.set(n.id, { x: cx + Math.cos(a) * d, y: cy + Math.sin(a) * d, vx: 0, vy: 0 });
+    }
+  }
+  const deg = new Map(ns.map((n) => [n.id, 0]));
+  for (const e of es) { deg.set(e.from, (deg.get(e.from) ?? 0) + 1); deg.set(e.to, (deg.get(e.to) ?? 0) + 1); }
+
+  const area = r.width * r.height;
+  const k = Math.sqrt(area / Math.max(1, ns.length)) * 0.62;
+  let temp = Math.min(r.width, r.height) * 0.10;
+
+  for (let it = 0; it < iterations; it++) {
+    // repulsion — capped so a huge graph does not explode
+    for (let i = 0; i < ns.length; i++) {
+      const a = P.get(ns[i].id);
+      for (let j = i + 1; j < ns.length; j++) {
+        const b = P.get(ns[j].id);
+        let dx = a.x - b.x, dy = a.y - b.y;
+        let d2 = dx * dx + dy * dy;
+        if (d2 < 0.01) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d2 = 0.01; }
+        if (d2 > k * k * 36) continue;
+        const d = Math.sqrt(d2), f = (k * k) / d / d;
+        a.vx += dx * f; a.vy += dy * f; b.vx -= dx * f; b.vy -= dy * f;
+      }
+    }
+    // attraction along real references
+    for (const e of es) {
+      const a = P.get(e.from), b = P.get(e.to);
+      const dx = a.x - b.x, dy = a.y - b.y;
+      const d = Math.hypot(dx, dy) || 0.01;
+      const f = (d * d) / k / d * 0.9;
+      a.vx -= dx * f; a.vy -= dy * f; b.vx += dx * f; b.vy += dy * f;
+    }
+    // gentle pull to centre so islands do not drift off screen
+    for (const n of ns) {
+      const p = P.get(n.id);
+      p.vx += (cx - p.x) * 0.0016 * (1 + (deg.get(n.id) ?? 0) * 0.05);
+      p.vy += (cy - p.y) * 0.0016 * (1 + (deg.get(n.id) ?? 0) * 0.05);
+      const sp = Math.hypot(p.vx, p.vy);
+      if (sp > temp) { p.vx = (p.vx / sp) * temp; p.vy = (p.vy / sp) * temp; }
+      p.x += p.vx; p.y += p.vy; p.vx *= 0.82; p.vy *= 0.82;
+    }
+    temp *= 0.985;
+  }
+}
+
+const radius = (n) => 4 + Math.min(7, (G.edges.filter((e) => e.from === n.id || e.to === n.id).length) * 0.7);
+const toScreen = (p) => ({ x: p.x * zoom + off.x, y: p.y * zoom + off.y });
+
+function draw() {
+  const r = canvas.getBoundingClientRect();
+  ctx.clearRect(0, 0, r.width, r.height);
+  const ns = visible();
+  const ids = new Set(ns.map((n) => n.id));
+  const near = selected
+    ? new Set(G.edges.filter((e) => e.from === selected || e.to === selected).flatMap((e) => [e.from, e.to]))
+    : null;
+
+  for (const e of G.edges) {
+    if (!ids.has(e.from) || !ids.has(e.to)) continue;
+    const a = toScreen(P.get(e.from)), b = toScreen(P.get(e.to));
+    const lit = near && (e.from === selected || e.to === selected);
+    ctx.strokeStyle = lit ? 'rgba(240,160,58,.55)' : 'rgba(255,255,255,.055)';
+    ctx.lineWidth = lit ? 1.4 : 0.7;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+
+  for (const n of ns) {
+    const p = toScreen(P.get(n.id));
+    const rad = radius(n) * Math.min(1.6, zoom);
+    const dim = (near && !near.has(n.id) && n.id !== selected) || (query && !matches(n));
+    ctx.globalAlpha = dim ? 0.16 : 1;
+    ctx.fillStyle = colorOf(n);
+    ctx.beginPath(); ctx.arc(p.x, p.y, rad, 0, Math.PI * 2); ctx.fill();
+    if (n.id === selected || n.id === hover) {
+      ctx.strokeStyle = '#ece9e4'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(p.x, p.y, rad + 3.5, 0, Math.PI * 2); ctx.stroke();
+    }
+    const showLabel = zoom > 0.75 || n.id === selected || n.id === hover || (query && matches(n));
+    if (showLabel && !dim) {
+      ctx.globalAlpha = n.id === selected || n.id === hover ? 1 : 0.72;
+      ctx.fillStyle = '#ece9e4';
+      ctx.font = `${n.id === selected ? 600 : 400} ${Math.min(13, 11 * Math.min(1.3, zoom))}px ui-sans-serif,system-ui,sans-serif`;
+      ctx.fillText(n.label.slice(0, 34), p.x + rad + 5, p.y + 3.5);
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
+/* ---- picking ---- */
+function at(mx, my) {
+  let best = null, bestD = 15;
+  for (const n of visible()) {
+    const p = toScreen(P.get(n.id));
+    const d = Math.hypot(p.x - mx, p.y - my);
+    if (d < Math.max(bestD, radius(n) * zoom + 6)) { best = n; bestD = d; }
+  }
+  return best;
+}
+
+canvas.addEventListener('mousedown', (ev) => {
+  const n = at(ev.offsetX, ev.offsetY);
+  if (n) drag = { id: n.id, moved: false };
+  else { panning = { x: ev.offsetX - off.x, y: ev.offsetY - off.y }; canvas.classList.add('dragging'); }
+});
+canvas.addEventListener('mousemove', (ev) => {
+  if (drag) {
+    const p = P.get(drag.id);
+    p.x = (ev.offsetX - off.x) / zoom; p.y = (ev.offsetY - off.y) / zoom;
+    p.vx = p.vy = 0; drag.moved = true; draw(); return;
+  }
+  if (panning) { off.x = ev.offsetX - panning.x; off.y = ev.offsetY - panning.y; draw(); return; }
+  const n = at(ev.offsetX, ev.offsetY);
+  const id = n?.id ?? null;
+  if (id !== hover) { hover = id; canvas.style.cursor = n ? 'pointer' : 'grab'; draw(); }
+});
+addEventListener('mouseup', (ev) => {
+  if (drag && !drag.moved) select(drag.id);
+  drag = null; panning = null; canvas.classList.remove('dragging');
+});
+canvas.addEventListener('wheel', (ev) => {
+  ev.preventDefault();
+  const f = ev.deltaY < 0 ? 1.12 : 1 / 1.12;
+  const nz = Math.max(0.25, Math.min(4, zoom * f));
+  off.x = ev.offsetX - (ev.offsetX - off.x) * (nz / zoom);
+  off.y = ev.offsetY - (ev.offsetY - off.y) * (nz / zoom);
+  zoom = nz; draw();
+}, { passive: false });
+
+/* ---- the panel ---- */
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function select(id) {
+  selected = id;
+  const n = G.nodes.find((x) => x.id === id);
+  if (!n) return;
+  const links = G.edges
+    .filter((e) => e.from === id || e.to === id)
+    .map((e) => ({ other: G.nodes.find((x) => x.id === (e.from === id ? e.to : e.from)), kind: e.kind }))
+    .filter((l) => l.other);
+
+  $('#detail').innerHTML =
+    (n.avatar ? `<img class="av" src="${esc(n.avatar)}" alt="">` : '') +
+    `<div class="kind">${esc(G.types[n.type]?.label ?? n.type)}</div>` +
+    `<h2 class="title">${esc(n.label)}</h2>` +
+    (n.detail ? `<div class="meta">${esc(n.detail)}</div>` : '') +
+    (n.body ? `<div class="body">${esc(n.body)}</div>` : '') +
+    (links.length
+      ? `<div class="rel"><h3>${links.length} connection${links.length === 1 ? '' : 's'}</h3>` +
+        links.slice(0, 40).map((l) =>
+          `<a data-go="${esc(l.other.id)}"><i style="background:${colorOf(l.other)}"></i>${esc(l.other.label.slice(0, 40))}<span>${esc(l.kind)}</span></a>`
+        ).join('') + '</div>'
+      : '<div class="rel"><h3>No connections</h3></div>');
+
+  for (const a of $('#detail').querySelectorAll('[data-go]')) {
+    a.onclick = () => { select(a.dataset.go); centreOn(a.dataset.go); };
+  }
+  draw();
+}
+
+function centreOn(id) {
+  const p = P.get(id); if (!p) return;
+  const r = canvas.getBoundingClientRect();
+  off.x = r.width / 2 - p.x * zoom;
+  off.y = r.height / 2 - p.y * zoom;
+  draw();
+}
+
+/* ---- legend / filters ---- */
+function legend() {
+  $('#legend').innerHTML = Object.entries(G.types)
+    .filter(([t]) => G.counts[t])
+    .map(([t, info]) =>
+      `<div class="chip ${hidden.has(t) ? '' : 'on'}" data-t="${t}" style="color:${info.color}">
+         <i></i>${esc(info.label)} <b>${G.counts[t]}</b></div>`).join('');
+  for (const el of $('#legend').querySelectorAll('.chip')) {
+    el.onclick = () => {
+      const t = el.dataset.t;
+      hidden.has(t) ? hidden.delete(t) : hidden.add(t);
+      legend(); layout(140); draw();
+    };
+  }
+}
+
+$('#search').addEventListener('input', (e) => { query = e.target.value.trim().toLowerCase(); draw(); });
+$('#search').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' || !query) return;
+  const hit = visible().find(matches);
+  if (hit) { select(hit.id); centreOn(hit.id); }
+});
+$('#refresh').onclick = () => load(true);
+
+async function load(rebuild) {
+  $('#stats').textContent = rebuild ? 'rebuilding…' : 'reading…';
+  try {
+    G = await (await fetch('/brain-graph')).json();
+  } catch {
+    $('#stats').textContent = 'could not reach Legacy';
+    return;
+  }
+  if (G.error) { $('#stats').textContent = G.error; return; }
+  P = new Map();
+  const total = G.nodes.length;
+  $('#stats').textContent = total
+    ? `${total} things, ${G.edges.length} connections`
+    : 'nothing to draw yet';
+  $('#built').textContent = new Date(G.builtAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  $('#note').textContent = [
+    G.vault ? '' : 'No Obsidian vault set — notes are missing from this map.',
+    G.truncated ? 'Showing the first 900 things.' : '',
+  ].filter(Boolean).join('  ·  ');
+  size(); layout(); 
+  const r = canvas.getBoundingClientRect();
+  off = { x: 0, y: 0 }; zoom = 1;
+  draw();
+}
+load();
+</script>
+</body>
+</html>
