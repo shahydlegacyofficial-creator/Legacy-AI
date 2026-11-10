@@ -1,0 +1,13 @@
+/.build/
+/release/
+/github-ready/
+/legacy/node_modules/
+/legacy/data/
+**/.env
+**/.env.*
+!**/.env.example
+*.log
+*.bak
+__pycache__/
+Thumbs.db
+.DS_Store
