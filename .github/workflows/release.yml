@@ -1,1 +1,67 @@
-# Source import in progress.
+name: Build Windows release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check version
+        run: |
+          $version = (Get-Content -Raw legacy/package.json | ConvertFrom-Json).version
+          $locked = (Get-Content -Raw legacy/package-lock.json | ConvertFrom-Json).version
+          if ($version -ne $locked) { throw 'Package and lockfile versions differ.' }
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -cne "v$version") {
+            throw 'The tag must match the package version.'
+          }
+
+      - name: Build installer
+        run: .\installer\Build.ps1
+
+      - name: Verify installed application
+        run: .\installer\Verify-Install.ps1
+
+      - name: Package source
+        run: .\installer\Package-Source.ps1
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Legacy-AI-Windows-release
+          path: release/*
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Create or update draft release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $version = (Get-Content -Raw legacy/package.json | ConvertFrom-Json).version
+          $assets = @(Get-ChildItem release -File | ForEach-Object FullName)
+          $existing = gh release view $env:GITHUB_REF_NAME --json isDraft 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            if (!(($existing | ConvertFrom-Json).isDraft)) { throw 'This release is already published. Use a new version.' }
+            gh release upload $env:GITHUB_REF_NAME @assets --clobber
+          } else {
+            gh release create $env:GITHUB_REF_NAME @assets --verify-tag --draft --title "Legacy AI $version" --notes-file RELEASE_NOTES.md
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'Draft release upload failed.' }
