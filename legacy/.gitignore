@@ -1,1 +1,7 @@
-# Source import in progress.
+node_modules/
+.env
+*.log
+/models/
+data/
+*.bak
+.legacy-backups/

@@ -1,0 +1,422 @@
+{
+  "assistant": {
+    "name": "Legacy",
+    "owner": "the user",
+    "purpose": "managing daily tasks, the PC, and social media — creating posts, checking insights, doing research, and drafting messages and promotions",
+    "personality": "warm, casual, plain-spoken, and brief"
+  },
+  "model": {
+    "provider": "anthropic",
+    "name": "claude-haiku-4-5-20251001",
+    "maxTokens": 8192,
+    "_maxTokensHint": "Ceiling per model reply. 8192 lets specialists ship complete self-contained apps/games; 2048 truncated them mid-code.",
+    "_modelHint": "Haiku 4.5 runs Legacy by default - conversation, tools, panels, reminders. thinking.workModel takes building, coding, long documents and specialist jobs; thinking.hardModel takes turns judged DEEP. If a model id is ever refused, she falls back to model.fallback for that turn rather than failing.",
+    "fallback": "claude-sonnet-4-6"
+  },
+  "voice": {
+    "sttProvider": "deepgram",
+    "ttsProvider": "kokoro",
+    "kokoroVoice": "af_heart",
+    "kokoroDtype": "q8",
+    "serverPort": 3000,
+    "openaiVoice": "nova",
+    "openaiModel": "gpt-4o-mini-tts",
+    "deepgramVoice": "aura-asteria-en",
+    "interrupt": false,
+    "interruptSensitivity": "low",
+    "_ttsHint": "ttsProvider: kokoro (local, free, always works) | openai (most natural, needs OPENAI_API_KEY) | deepgram (fastest cloud, uses the listening key) | elevenlabs (best sounding, costs per character, needs ELEVENLABS_API_KEY). Change it in the Settings window - no restart needed. Any cloud voice that fails falls straight back to Kokoro, so she is never mute.",
+    "elevenVoice": "21m00Tcm4TlvDq8ikWAM",
+    "elevenModel": "eleven_turbo_v2_5",
+    "elevenStability": 0.5,
+    "elevenSimilarity": 0.75,
+    "_hintEleven": "ElevenLabs: best sounding, costs per character. Needs ELEVENLABS_API_KEY in .env, then pick it in Settings. elevenVoice is a voice id - the eight in the dropdown are their stock voices, and ANY id pasted from their library works. The turbo model and style 0 are deliberate: multilingual is slower AND duller on English, and style above 0 adds latency while flattening the read. Ask 'how fast is the voice' to compare it against Kokoro on YOUR connection.",
+    "sttModel": "nova-3",
+    "fishVoice": "",
+    "fishModel": "s2-pro",
+    "_fishHint": "Fish Audio voice: set ttsProvider to \"fish\", FISH_API_KEY in .env, and fishVoice to a voice model id from fish.audio (their library, or clone your own from a short clean recording). fishModel: s2-pro (best), s1 (older). If Fish fails she falls back to Kokoro for that reply.",
+    "remoteAccess": false
+  },
+  "heartbeat": {
+    "enabled": true,
+    "quietHours": {
+      "start": "22:30",
+      "end": "00:00"
+    },
+    "checks": {
+      "due_tasks": {
+        "intervalMinutes": 1,
+        "leadMinutes": 30
+      },
+      "daily_summary": {
+        "time": "09:00"
+      },
+      "system_errors": {
+        "intervalMinutes": 5
+      },
+      "post_reminder": {
+        "enabled": true,
+        "time": "11:00",
+        "days": [
+          1,
+          3,
+          5
+        ],
+        "message": "Time to post on your social pages — want the Post Manager to draft a caption with hashtags?"
+      },
+      "daily_brief": {
+        "enabled": true,
+        "time": "20:00"
+      },
+      "post_performance": {
+        "enabled": true,
+        "intervalMinutes": 60
+      }
+    }
+  },
+  "rails": {
+    "confirmExpiryMinutes": 15
+  },
+  "pc": {
+    "commands": {
+      "chrome": {
+        "type": "app",
+        "target": "chrome",
+        "description": "Open Google Chrome"
+      },
+      "notepad": {
+        "type": "app",
+        "target": "notepad",
+        "description": "Open Notepad"
+      },
+      "calculator": {
+        "type": "app",
+        "target": "calc",
+        "description": "Open Calculator"
+      },
+      "explorer": {
+        "type": "app",
+        "target": "explorer",
+        "description": "Open File Explorer"
+      },
+      "netflix": {
+        "type": "url",
+        "target": "https://www.netflix.com",
+        "description": "Open Netflix"
+      },
+      "youtube": {
+        "type": "url",
+        "target": "https://www.youtube.com",
+        "description": "Open YouTube"
+      },
+      "instagram": {
+        "type": "url",
+        "target": "https://www.instagram.com",
+        "description": "Open Instagram"
+      },
+      "tiktok": {
+        "type": "url",
+        "target": "https://www.tiktok.com",
+        "description": "Open TikTok"
+      },
+      "facebook": {
+        "type": "url",
+        "target": "https://www.facebook.com",
+        "description": "Open Facebook"
+      },
+      "web_search": {
+        "type": "url",
+        "target": "https://www.google.com/search?q={query}",
+        "description": "Search the web in the browser"
+      },
+      "youtube_search": {
+        "type": "url",
+        "target": "https://www.youtube.com/results?search_query={query}",
+        "description": "Search YouTube"
+      }
+    }
+  },
+  "social": {
+    "instagram": {
+      "userId": "",
+      "username": "",
+      "graphVersion": "v23.0"
+    },
+    "facebook": {
+      "_hint": "Set the slug or ID of your own Facebook Page.",
+      "slug": "",
+      "pageId": "",
+      "cacheMinutes": 20
+    }
+  },
+  "ui": {
+    "fiveHourTokenBudget": 1000000,
+    "weather": {}
+  },
+  "obsidian": {
+    "vaultPath": "",
+    "autoSave": true,
+    "watch": true,
+    "watchEveryMinutes": 3,
+    "recentHours": 48
+  },
+  "workspace": {
+    "_hint": "Legacy workspace: a folder Legacy may freely save files/folders/research/images into (forward slashes, e.g. C:/Users/Shahyd/LegacyWorkspace). Empty = disabled. Legacy can NEVER touch anything outside this folder.",
+    "root": ""
+  },
+  "localModel": {
+    "_hint": "Optional spare brain: install Ollama (ollama.com), run \"ollama pull llama3.2\", set enabled true. When the cloud API is unreachable Legacy answers with the local model instead of going silent (conversation only, no tools).",
+    "enabled": false,
+    "url": "http://localhost:11434",
+    "model": "llama3.2"
+  },
+  "briefing": {
+    "_hint": "Hourly spoken briefing: tasks, invoices, approvals, notices. Needs the Legacy page open to be heard. Quiet hours from heartbeat.quietHours apply.",
+    "enabled": false,
+    "everyHours": 4,
+    "autoMorning": true,
+    "morningAt": "07:30",
+    "_hintMorning": "The morning brief speaks itself at morningAt, without being asked. Set autoMorning false to go back to asking for it. Respects quiet hours."
+  },
+  "journal": {
+    "_hint": "End-of-day journal note written into the Obsidian vault (Journal/YYYY-MM-DD.md). Needs obsidian.vaultPath.",
+    "enabled": true,
+    "time": "21:30"
+  },
+  "phoneLink": {
+    "_hint": "Phone Link receiver. The Legacy Link Android app posts notifications to /phone-notify over Tailscale (secret in data/phone-link.json, shown in Settings). FINANCE RECORDS RECEIPTS ONLY: an amount plus receipt wording (incomeWords) stages a gated income entry; anything matching outgoingWords, or ambiguous, is never logged as income. Every mirrored notification is SPOKEN by default (defaultAction: speak|notice|log). priorityContacts: names/numbers that get spoken even in quiet hours and called out by name. rules: [{name, match:{app?,keywords?[]}, action, urgent?}] to downgrade a noisy app. incomeWords/outgoingWords override the built-in vocabulary for your bank.",
+    "enabled": true,
+    "defaultAction": "speak",
+    "priorityContacts": [],
+    "rules": [],
+    "incomeWords": [],
+    "outgoingWords": []
+  },
+  "lean": {
+    "_hint": "Token economy. compactHistory: fold older messages into a recap once the conversation passes historyTokenBudget, keeping keepRecentMessages verbatim. Tools and the settled conversation are cached automatically (brain.js) — ask Legacy \"how are my tokens?\" for a report.",
+    "compactHistory": true,
+    "keepRecentMessages": 24,
+    "historyTokenBudget": 12000,
+    "sessionTokenBudget": 2000000
+  },
+  "shop": {
+    "_hint": "The shop. The website posts orders to POST /shop/order with header X-Shop-Token (token lives in data/shop.json, ask Legacy for it). GET /shop/catalogue serves the live product list. Orders: new -> confirmed (paid, stock drops) -> fulfilled. Money and deletions are gated — Legacy asks before marking paid or deleting a product.",
+    "enabled": true,
+    "requireToken": true,
+    "currency": "USD"
+  },
+  "reflect": {
+    "_hint": "Nightly reflection: Legacy reads the day's audit trail and draws at most 3 durable lessons about how Shahyd likes things done, from real evidence (actions refused, approved, ignored). Lessons ride in her prompt, are listed by list_lessons, and dropped with forget_lesson. They never override a confirmation gate or safety rule. Time is set in heartbeat.checks.daily_reflection.time.",
+    "enabled": false,
+    "maxLessons": 40
+  },
+  "triggers": {
+    "_hint": "Shahyd's own \"when X happens, do Y\" rules, set by voice with create_trigger. Watched every everyMinutes. A trigger can tell him, note it, add a task, or PREPARE a gated action - it can never send, spend, delete or publish on its own; prepared actions always go through the confirmation gate.",
+    "enabled": true,
+    "everyMinutes": 15
+  },
+  "thinking": {
+    "_hint": "How hard Legacy thinks before answering. mode auto|always|off (she can change this by voice with thinking_mode). deepBudget is the private reasoning allowance on a hard turn - must be >=1024 and leave room under model.maxTokens to actually answer. hardModel is OPT-IN escalation for hard turns; leaving it empty is usually right because prompt caching is per-model and switching throws away the cached tools/prompt. cheapModel is used only for background one-shot work, which has no cache worth keeping.",
+    "mode": "auto",
+    "deepBudget": 4000,
+    "hardModel": "",
+    "cheapModel": "",
+    "workModel": "claude-sonnet-4-6"
+  },
+  "selfCheck": {
+    "_hint": "Before Legacy asks Shahyd to approve a held action, she reads it back once and checks it against what he actually asked for - wrong amount, wrong recipient, missing detail. It can only ADD a concern to what he is told; it can never approve, never run anything, and never block the gate. Runs on background routing (cheap brain, no tools). If it errors or times out the gate behaves exactly as before.",
+    "enabled": true,
+    "timeoutMs": 12000,
+    "model": ""
+  },
+  "weather": {
+    "_hint": "Weather shown on the control room. Uses Open-Meteo: no API key, no signup, nothing to keep alive. Defaults to Male'. Cached, and shows the last known reading rather than an error if the network hiccups.",
+    "enabled": false,
+    "place": "Malé",
+    "latitude": 4.1755,
+    "longitude": 73.5093,
+    "timezone": "Indian/Maldives",
+    "cacheMinutes": 20
+  },
+  "voiceId": {
+    "_hint": "RETIRED in v1.59. Speaker recognition no longer gates anything - it was refusing Shahyd's own approvals and leaving actions pending, which is the one failure a lock like this cannot have. The tools below still enrol and report, but nothing acts on the result. Left off.",
+    "enabled": false
+  },
+  "whatsapp": {
+    "_hint": "WhatsApp without the Business API. Legacy drafts a message and opens the chat with it already typed via a wa.me link - Shahyd reads it and presses send. She never sends WhatsApp messages herself. defaultCountryCode is put back on bare local numbers; businessNumber is used for click-to-chat links on quotes and websites.",
+    "defaultCountryCode": "",
+    "businessNumber": ""
+  },
+  "pricing": {
+    "_hint": "Optional. Add a model's USD-per-million-token rate here and it overrides the built-in table without a code change, e.g. \"claude-sonnet-6\": { \"input\": 3, \"output\": 15, \"cacheWrite\": 3.75, \"cacheRead\": 0.3 }. A model with no rate is reported as UNKNOWN cost, never as zero."
+  },
+  "scheduler": {
+    "_hint": "The posting calendar. Queuing a post is GATED - Shahyd approves the exact caption, platform and time, and that approval covers the publishing, so it goes out without asking again. Set confirmAtPublish true if you would rather be asked in the moment instead (it becomes a reminder with the caption ready). graceMinutes: a post more than this late is NOT sent - posting a 'good morning' caption at midnight is worse than not posting.",
+    "enabled": true,
+    "everyMinutes": 5,
+    "graceMinutes": 90,
+    "confirmAtPublish": true
+  },
+  "shopWatch": {
+    "_hint": "Watching the website shop. She checks for new orders every everyMinutes and tells him - in the room, and on Telegram. autoConfirmPayments: when TRUE she marks an order paid on her own IF the bank amount matches EXACTLY, the currency agrees, exactly ONE order matches, and the total is under autoConfirmCeiling. Anything less certain and she still asks. She always says what she did. Refunds, money leaving the account, and deletions stay gated no matter what this is set to. matchTolerance only ever applies to SUGGESTIONS, never to autopilot.",
+    "enabled": false,
+    "everyMinutes": 5,
+    "matchTolerance": 1,
+    "autoConfirmPayments": false,
+    "autoConfirmCeiling": 5000,
+    "partnerEveryMinutes": 10
+  },
+  "agents": {
+    "_hint": "Which specialists ORBIT the core. The rest sit in the shadows above it - still there, still working when delegated to, just not circling. Click one to see what it does. The list is also the seating order: first name takes the innermost ring. Every agent in presets/agents/ and data/agents/ is available either way; this only decides who orbits.",
+    "main": [
+      "promoter",
+      "researcher",
+      "marketer",
+      "coder",
+      "studiobooking",
+      "lyricist"
+    ]
+  },
+  "telegramRemote": {
+    "_hint": "Legacy on his phone. New orders and matched payments go to Telegram and he can reply - a bare 'yes' decides whatever is waiting, anything else is a normal conversation with her full toolset. ONLY TELEGRAM_CHAT_ID gets that. The MERCH PARTNER, if PARTNER_CHAT_ID is set in .env, gets a deliberately NARROW door on the same bot: they can list their jobs and move one along their own lane, and nothing else - their messages never reach the agent. Everyone else is ignored and the attempt is logged.",
+    "enabled": false,
+    "everySeconds": 20
+  },
+  "prayer": {
+    "_hint": "Prayer times for Male from the free Aladhan API - no key needed. A WHOLE MONTH is fetched at once and kept, so a morning with no connection still has the times. remind announces each prayer AT its time, on screen and on his phone. It deliberately ignores quiet hours, because Fajr is before dawn and skipping it silently would defeat the point - set remind false to stop it entirely. method 2 is ISNA, which matches the printed Male timetable; change it if the times ever disagree with the mosque.",
+    "enabled": false,
+    "method": 2,
+    "remind": true,
+    "remindOnPhone": true
+  },
+  "deadlines": {
+    "_hint": "Warn him when a task or session is coming up. Checked hourly, respects quiet hours, and each deadline is mentioned ONCE - a reminder repeated every hour stops being a reminder. A date with no time is treated as due at 5pm.",
+    "enabled": true,
+    "warnWithinHours": 48
+  },
+  "studio": {
+    "_hint": "Legacy Studios settings.",
+    "projectsFolder": "Projects"
+  },
+  "vision": {
+    "_hint": "Claude looking through the camera: \"what is this?\", live naming (the name button on the camera, every ~3s for 2 minutes then off), and receipts. Uses model.name (Haiku) unless you set a model here. Each look is a fraction of a cent; two minutes of live naming is about 40 looks.",
+    "model": ""
+  },
+  "browser": {
+    "_hint": "Legacy driving a real browser via agent-browser - now a dependency, so npm install fetches it. Run  npm run setup:browser  ONCE to download the Chrome it drives. command \"auto\" uses the native binary in node_modules (on Windows the .cmd shim cannot be spawned without a shell, so this matters). allowedDomains [\"*\"] lets her open any site you ask for - your choice. To fence her in, replace it with a list like [\"shahydlegacy.com\", \"*.google.com\"]; an EMPTY list means nothing at all. Page text always arrives wrapped as untrusted data, and there is still deliberately no tool that runs arbitrary JavaScript.",
+    "enabled": true,
+    "command": "auto",
+    "session": "legacy",
+    "allowedDomains": [
+      "*"
+    ],
+    "maxOutput": 40000,
+    "timeoutSeconds": 45
+  },
+  "media": {
+    "_hint": "Where his music lives, so \"play something\" works without being asked. play_music remembers the last folder he named and falls back to this. The watch tool opens streaming services by deep link - Netflix and Prime have no API that can press play from outside, so she gets him to the title and he clicks once.",
+    "musicFolder": ""
+  },
+  "self": {
+    "_hint": "Where Legacy is installed, so she can read and fix her own code and settings. SHE CANNOT TOUCH: .env or anything named like a key or token (those are credentials, and she uses them through the environment - she has no reason to read them into a conversation); node_modules, .git, models; and data/, which is finance records and client lists, not code. Reads are open. WRITES ARE GATED and keep a backup, because a wrong edit here does not give a wrong answer - it stops her booting, and then you cannot ask her to fix it. A config.json edit is parsed before it is written for the same reason. root \"auto\" means wherever Legacy is installed - a fixed path like C:/legacy broke on any other folder. Set root to '' to switch self-editing off entirely. New files can be created (never overwriting), and a JavaScript edit that would not parse is refused before it is written.",
+    "root": ""
+  },
+  "transcribe": {
+    "_hint": "Audio to MIDI with MuScriptor (Mirelo x Kyutai). OFF until you install it - see SETUP-transcription.md. READ THE LICENCE NOTE FIRST: the code is MIT but the MODEL WEIGHTS are CC-BY-NC, which means non-commercial. Sketching your own demo is fine; MIDI that ships inside a score you are paid for is commercial use of a non-commercial model, and that is your call to make knowingly. model: small is fastest, medium is the balance, large is best and slow. It is a SKETCH - no velocity, drums are onset-only, and it misses notes in a dense mix.",
+    "enabled": false,
+    "command": "muscriptor",
+    "model": "medium",
+    "maxMB": 120
+  },
+  "faces": {
+    "_hint": "Face recognition. 128 numbers per face, never a photo, and it never leaves this machine - the model runs in your browser. Models are in public/models/face (6.5MB, shipped). Runs only while the camera panel is open. threshold 0.48: lower is stricter. Siblings match at 0.55, which is why it is not higher. greetStrangers false means she TELLS YOU about someone she does not know rather than speaking to them. photographStrangers sends ONE photo to your phone when she sees a face she does not know, then stays quiet for 15 minutes - a stranger in shot for ten minutes would otherwise be 1,200 photographs and you would mute the chat. Needs Telegram set up in .env.",
+    "enabled": true,
+    "threshold": 0.48,
+    "greetAfterMinutes": 90,
+    "noticeStrangers": true,
+    "greetStrangers": false,
+    "strangerQuietMinutes": 20,
+    "cameraName": "the camera",
+    "photographStrangers": false
+  },
+  "news": {
+    "_hint": "Maldivian headlines for the right rail. No key, no account. sites: fetched through Google News RSS, scoped to each outlet with site: - their own feed URLs did not answer, and this door does. feeds: an outlet's OWN rss, tried first when you add one. If you find a working direct feed, put it here and it takes priority. A source that fails is NAMED in the panel rather than silently missing, so you can see which one to fix.",
+    "sites": [
+      {
+        "name": "Sun",
+        "domain": "sun.mv"
+      },
+      {
+        "name": "Mihaaru",
+        "domain": "mihaaru.com"
+      },
+      {
+        "name": "Adhadhu",
+        "domain": "adhadhu.com"
+      }
+    ],
+    "feeds": []
+  },
+  "markets": {
+    "_hint": "Bitcoin from CoinGecko, gold and oil from Stooq. Both free, neither needs a key. Refreshed at most once a minute - a price 60 seconds stale is fine, and hammering a free service everyone relies on is not.",
+    "enabled": true
+  },
+  "deck": {
+    "_hint": "Legacy on your Stream Deck. Needs the plugin from the streamdeck folder installed - the Stream Deck app has no open API, so being a plugin is the only way in. See SETUP-streamdeck.md. Set enabled false to stop her using it.",
+    "enabled": true
+  },
+  "reminders": {
+    "_hint": "Reminders that keep coming until you answer. TELEGRAM BOTS CANNOT PLACE VOICE CALLS - the Bot API has no method for it, so a \"call\" through Telegram is not something I can build honestly. What this does instead: a Telegram message with the sound forced on, repeated at 0, 2, 5 and 10 minutes until you reply ok. On a phone that is a notification that keeps arriving, which is what a call is FOR. call.enabled turns on a REAL phone call through Twilio, which does reach Maldivian numbers - needs TWILIO_SID and TWILIO_TOKEN in .env plus the two numbers here. It rings on the SECOND attempt, not the first, so an ordinary reminder does not feel like an emergency. See SETUP-reminders.md.",
+    "call": {
+      "enabled": false,
+      "from": "",
+      "to": ""
+    }
+  },
+  "notices": {
+    "_hint": "Notices clear themselves once they have been up a while, so you are not dismissing the same ones by hand. IMPORTANT ones are never swept - a payment to confirm or a prayer you asked to be woken for waits until you deal with it. Set clearAfterMinutes higher if things vanish before you read them.",
+    "clearAfterMinutes": 1
+  },
+  "guard": {
+    "_hint": "Locks the PC when she sees someone she does not recognise using it. SHIPS OFF - it can lock you out of your own machine, so it is yours to switch on. Authorised people are simply everyone enrolled in face recognition. Enrol yourself and Shana first, from several angles, or this will fight you. It NEVER locks when nobody is in shot (you walked away) or when anyone it knows is in frame (a visitor beside you is a visitor). strikes: consecutive half-second checks showing a stranger alone before it acts. warnSeconds: the countdown you can cancel, on screen and by voice. quietMinutesAfterCancel: how long it leaves you alone after you say stop, so it does not argue with you every ten seconds. Your phone is told BEFORE the lock, with a photo, never after.",
+    "enabled": true,
+    "strikes": 5,
+    "warnSeconds": 20,
+    "quietMinutesAfterCancel": 5
+  },
+  "gmaps": {
+    "_hint": "Google Maps for ratings, reviews and opening hours. Needs GOOGLE_MAPS_KEY in .env and BILLING ENABLED on the project - they give a monthly credit that covers ordinary use many times over, but they want a card. See SETUP-gmaps.md. With no key she falls back to find_nearby on OpenStreetMap, which is free and needs no account - you just lose star ratings.",
+    "enabled": true
+  },
+  "sentry": {
+    "_hint": "HOME SHIELD - watches the house through the webcam while you are out. Turn it on with the shield button, by saying you are going out, or by texting \"shield on\" (or \"arm\") to your Legacy bot; \"shield off\", \"disarm\" or \"home\" turns it off. It looks for PEOPLE, not motion - motion is curtains and sunset. A face it does not know, or a person whose face it cannot see, sends a photo to your phone. Shana (anyone enrolled) gets a \"Shana is home\" message instead. alertEveryMinutes: the gap between alerts of the same kind - forty photos in ten minutes is how an alarm gets muted. keepSnapshots: how many alert photos stay in data/sentry, oldest pruned first. The Legacy page must be open on this PC with the camera pointed at the room.",
+    "alertEveryMinutes": 3,
+    "keepSnapshots": 40
+  },
+  "objects": {
+    "_hint": "Object recognition (COCO-SSD) - 80 everyday kinds of thing: furniture, electronics, kitchen things, bags, books. NOT specific items: it knows \"person\" and \"tv\", not your Les Paul. Run npm run setup:objects once to keep the weights on this machine; without it they load from Google each time. She remembers what lives in each place - name the room and ask what has changed."
+  },
+  "tiktok": {
+    "_hint": "Your TikTok follower count, read from your public profile every 4 hours - no API key, since TikTok has no simple personal one. If TikTok changes its page or asks for a human check, the LAST GOOD NUMBER STAYS rather than dropping to zero. Say \"check my TikTok\" for an update now.",
+    "handle": "",
+    "autoRefresh": false
+  },
+  "linkedin": {
+    "_hint": "Posting to your LinkedIn profile. Self-serve - no LinkedIn review needed for your own profile. SETUP-linkedin.md, then  npm run setup:linkedin. She DRAFTS onto a card and posts only when you say so, showing the exact text first. The connection lasts ~60 days; she warns a week before. apiVersion is LinkedIn's monthly API version (YYYYMM). They retire old ones - if posting starts failing with a version message, set this to the current month.",
+    "apiVersion": "202607"
+  },
+  "quotes": {
+    "_hint": "Watches Gmail every 10 minutes for quotes, invoices, proformas, POs and price requests - from these clients, or anyone whose subject asks. Summarises each, drafts a reply priced from YOUR rate card only ([PRICE?] where something is not on it - she refuses to send until you fill it). Nothing is sent without you confirming. Urgent ones reach your phone insistently, and ring you if Twilio is set up (SETUP-reminders.md). Add clients here by any part of their name or email domain.",
+    "enabled": false,
+    "clients": [
+      "psm",
+      "mindco",
+      "dhiraagu",
+      "ooredoo"
+    ],
+    "callOnUrgent": true
+  },
+  "imagegen": {
+    "_hint": "Post images. Without a key she designs a branded square card (headline on your brand colours) and photographs it with the browser - free, always works. Add OPENAI_API_KEY to .env for AI pictures (\"with an AI image of a sandbank at sunset\"); if that fails she falls back to the card. model: the OpenAI image model.",
+    "model": "gpt-image-1"
+  }
+}

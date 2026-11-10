@@ -1,0 +1,37 @@
+{
+  "name": "legacy",
+  "version": "3.24.0",
+  "description": "Legacy AI desktop assistant",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "desktop": "node src/desktop.js",
+    "configure": "node src/desktop.js configure",
+    "start": "node --env-file=.env src/index.js",
+    "voice": "node --env-file=.env src/server.js",
+    "setup:instagram": "node --env-file=.env src/setup-instagram.js",
+    "setup:objects": "node src/setup-objects.js",
+    "setup:browser": "node src/setup-browser.js",
+    "setup:linkedin": "node --env-file=.env src/setup-linkedin.js",
+    "setup:tiktok": "node --env-file=.env src/setup-tiktok.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.60.0",
+    "agent-browser": "^0.38.1",
+    "imapflow": "2.11.0",
+    "kokoro-js": "^1.2.0",
+    "nodemailer": "10.4.0",
+    "pdf-parse": "^1.1.1",
+    "qrcodejs": "1.0.0",
+    "selfsigned": "^2.4.1"
+  },
+  "overrides": {
+    "sharp": "0.35.5",
+    "tar": "7.5.22",
+    "ip-address": "10.7.6",
+    "node-forge": "1.4.3"
+  }
+}
