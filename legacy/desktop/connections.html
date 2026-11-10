@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Legacy AI Connections</title>
+<link rel="icon" type="image/png" href="LOGO_DATA_URL">
+<style>
+  :root { color-scheme: dark; font: 16px system-ui, sans-serif; }
+  body { background: #0b1115; color: #e4edef; margin: 32px auto; padding: 0 20px; max-width: 720px; }
+  h1 { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+  h1 img { flex: none; border-radius: 10px; }
+  p { line-height: 1.55; color: #bdccd0; }
+  details { background: #131e24; border: 1px solid #364c54; border-radius: 8px; margin: 8px 0; padding: 12px; }
+  summary { cursor: pointer; font-weight: 650; } label { display: block; margin: 12px 0; overflow-wrap: anywhere; }
+  input[type=password], input[type=text] { display: block; box-sizing: border-box; width: 100%; padding: 8px; margin-top: 4px; font: inherit; }
+  span { font-size: .875rem; } button { font: inherit; font-weight: 650; margin-top: 12px; padding: 10px 16px; cursor: pointer; background: #9cf2d9; color: #132522; border: 0; border-radius: 6px; }
+  button:disabled { opacity: .55; cursor: wait; }
+</style>
+<main>
+  <h1><img src="LOGO_DATA_URL" width="48" height="48" alt="">Legacy AI Connections</h1>
+  <p>Enter your own Anthropic API key for Claude. Deepgram adds microphone transcription. Kokoro speaks locally. Other services are optional.</p>
+  <p>Use the Start menu shortcuts to authorize LinkedIn, Instagram and TikTok after saving their credentials. For PayPal sandbox testing, set <code>PAYPAL_ENV</code> to <code>sandbox</code>. To enable the Android receiver on your Tailscale connection, set <code>LEGACY_PHONE_LINK</code> to <code>1</code>.</p>
+  <form id="settings" autocomplete="off">
+    <label>Import an existing .env file <input type="file" id="import" accept=".env,text/plain"></label>
+    <p>Leave fields blank to keep saved values. Values you enter here take priority over imported values. The file and values are saved on this PC.</p>
+    <!-- fields -->
+    <button type="submit">Save connections</button>
+    <p role="status" id="status"></p>
+  </form>
+</main>
+<script>
+  const form = document.querySelector('#settings');
+  const status = document.querySelector('#status');
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = form.querySelector('button');
+    button.disabled = true;
+    try {
+      const fields = new FormData(form);
+      const remove = fields.getAll('remove');
+      fields.delete('remove');
+      const changes = Object.fromEntries([...fields].filter(([, value]) => value.trim()));
+      const file = document.querySelector('#import').files[0];
+      if (file?.size > 240 * 1024) throw new Error('The file is too large.');
+      const raw = file ? await file.text() : '';
+      const response = await fetch(location.pathname, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ raw, changes, remove }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not save the connections.');
+      form.reset();
+      for (const item of form.querySelectorAll('input, button')) item.disabled = true;
+      status.textContent = result.message;
+    } catch (error) {
+      status.textContent = error.message;
+      button.disabled = false;
+    }
+  });
+</script>
+</html>

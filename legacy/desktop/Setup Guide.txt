@@ -1,0 +1,77 @@
+LEGACY AI 3.24.0 FOR WINDOWS
+
+Getting started
+
+1. Run Legacy AI Setup on a 64-bit Windows 10 or 11 PC.
+2. Open Legacy AI from Start. Enter an Anthropic API key to start Claude.
+3. Add a Deepgram API key for microphone input. The browser may ask you to
+   allow microphone access. Kokoro supplies local speech.
+4. Close the Legacy AI console window when you want to stop the assistant.
+
+Setup installs a private Node.js runtime, the locked JavaScript packages,
+Kokoro's default CPU model and voices, and the camera models. Edge or Chrome
+can drive the browser tool. If neither is installed, use Install Browser
+Runtime from Start. That shortcut downloads Chrome for Testing.
+
+Connections
+
+Open Configure Connections from Start to enter keys or import an existing .env
+file. Optional fields can stay blank. Restart Legacy AI after saving.
+The installed app uses %LOCALAPPDATA%\Legacy AI\.env. Keep this file private.
+
+Anthropic and Deepgram
+  Create an API key in your Anthropic console and a project API key in
+  Deepgram. The assistant sends typed requests to Claude. Microphone audio is
+  sent to Deepgram when you use voice input.
+
+Telegram
+  Create a bot with @BotFather. Start a private chat with the bot, then find
+  the chat ID in your bot's getUpdates response. Save TELEGRAM_BOT_TOKEN and
+  TELEGRAM_CHAT_ID. Set LEGACY_TELEGRAM_REMOTE=1 to let that chat send commands
+  to Legacy. Use a separate bot for each running instance of Legacy AI.
+
+LinkedIn
+  Create a LinkedIn Developer app with Sign In with LinkedIn using OpenID
+  Connect and Share on LinkedIn. Register http://localhost:8765/callback as
+  the exact redirect URI. Save LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET,
+  then use Connect LinkedIn from Start and sign in with your account.
+  Renew using the same shortcut when the token expires.
+
+PayPal
+  Create a PayPal REST app with Transaction Search enabled. Save its client ID
+  and secret. Set PAYPAL_ENV=sandbox for sandbox credentials or live for
+  production. Ask Legacy to check recent PayPal payments. This is read-only.
+
+Android banking alerts
+  Install Legacy Link on an Android phone. Its personal build works over
+  Tailscale. Sign in to Tailscale on the phone and PC, set LEGACY_PHONE_LINK=1
+  in Configure Connections, and restart Legacy AI.
+  Open Legacy AI Settings > Phone link. Use the displayed receiver address
+  and pairing secret or scan its QR code in Legacy Link. Grant notification
+  access on Android, select the banking app, then test the connection.
+  Legacy records incoming alerts and stages matching income for approval.
+  Bank passwords and banking API keys are unnecessary for this feature.
+
+Meta, TikTok, Gmail, and other services
+  For Meta, enter the app ID, secret, and Instagram token, then choose Connect
+  Instagram from Start to discover the linked Business/Creator account.
+  For Facebook Pages, set social.facebook.pageId or slug in config.json.
+  For TikTok, save the client key and secret and choose Connect TikTok.
+  Gmail uses your Gmail address and Google app password.
+  Google Maps, YouTube, Tavily, the website shop, and the optional voice
+  services use the matching fields in Configure Connections. The Google
+  OAuth fields from older copies can be imported. This build has no Google
+  Calendar OAuth integration.
+
+  Setup notes for additional integrations are in the Setup Notes folder.
+  Ollama, MuScriptor, Email Studio, and Stream Deck have their own installers.
+  Set your own workspace or Obsidian vault in config.json to enable file and
+  note tools. The default install folder is
+  %LOCALAPPDATA%\Programs\Legacy AI. Legacy keeps settings in config.json
+  and runtime records in the data folder there.
+
+Upgrades and uninstall
+
+Windows Settings > Installed apps can remove Legacy AI. Settings, local
+credentials and records are kept so a reinstall can reuse them. You can
+delete them separately when you want to remove that data.
