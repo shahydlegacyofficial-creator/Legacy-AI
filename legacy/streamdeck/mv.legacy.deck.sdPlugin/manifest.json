@@ -1,1 +1,22 @@
-# Source import in progress.
+{
+  "SDKVersion": 2,
+  "Author": "Shahyd Legacy",
+  "Name": "Legacy",
+  "Description": "Lets Legacy show what she is doing on the Stream Deck, and lets its keys talk back to her.",
+  "Version": "1.0.0",
+  "Icon": "icon",
+  "URL": "http://localhost:3000",
+  "CodePath": "plugin.html",
+  "Software": { "MinimumVersion": "6.0" },
+  "OS": [{ "Platform": "windows", "MinimumVersion": "10" }],
+  "Actions": [
+    {
+      "UUID": "mv.legacy.deck.slot",
+      "Name": "Legacy Slot",
+      "Icon": "icon",
+      "Tooltip": "Legacy controls this key. Press it to talk to her.",
+      "States": [{ "Image": "icon", "TitleAlignment": "bottom" }],
+      "SupportedInMultiActions": false
+    }
+  ]
+}

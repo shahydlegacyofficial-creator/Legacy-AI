@@ -1,0 +1,99 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Legacy</title>
+<script>
+/**
+ * Legacy's Stream Deck plugin (v2.7).
+ *
+ * WHY THIS EXISTS RATHER THAN A DIRECT CALL: the Stream Deck app has no open
+ * API. You cannot reach a running Stream Deck from outside it. A plugin is
+ * launched BY the app, which hands it a WebSocket port on the command line —
+ * so the only way in is to be a plugin, and then connect back out to Legacy.
+ *
+ * Which is what this does. Two sockets:
+ *   · to Stream Deck, because that is the only way to draw on a key
+ *   · to Legacy, so she can say what to draw and hear when a key is pressed
+ *
+ * It RECONNECTS to Legacy forever. She restarts often while he is working on
+ * her, and a plugin that gives up after one failure would need the Stream Deck
+ * app restarting every time — which he would notice and resent.
+ */
+let sd = null;          // the Stream Deck socket — the only way to draw on a key
+let pluginUUID = null;
+const slots = new Map();   // context -> the key's position
+
+/** Called by the Stream Deck app itself. The name is fixed by their SDK. */
+function connectElgatoStreamDeckSocket(port, uuid, registerEvent) {
+  pluginUUID = uuid;
+  sd = new WebSocket(`ws://127.0.0.1:${port}`);
+
+  sd.onopen = () => {
+    sd.send(JSON.stringify({ event: registerEvent, uuid }));
+    poll();
+  };
+
+  sd.onmessage = (e) => {
+    const m = JSON.parse(e.data);
+    const ctx = m.context;
+
+    if (m.event === 'willAppear') {
+      // Remember where this key is, so Legacy can say "slot 3" rather than
+      // needing to know Elgato's opaque context strings.
+      slots.set(ctx, m.payload?.coordinates ?? null);
+      send({ type: 'slot', action: 'appear', context: ctx, at: m.payload?.coordinates });
+    }
+    if (m.event === 'willDisappear') {
+      slots.delete(ctx);
+      send({ type: 'slot', action: 'disappear', context: ctx });
+    }
+    if (m.event === 'keyDown') send({ type: 'press', context: ctx, at: slots.get(ctx) });
+    if (m.event === 'keyUp') send({ type: 'release', context: ctx });
+  };
+}
+
+/**
+ * HTTP, NOT A WEBSOCKET, and that was a deliberate change of mind.
+ *
+ * A socket would have meant adding a WebSocket server to Legacy — a new
+ * dependency, a handshake, and a class of failure where the connection is
+ * "open" but nothing is flowing. Polling twice a second is imperceptible for
+ * showing an emoji, needs nothing installed, and cannot half-work: either the
+ * fetch returns or it does not.
+ */
+const LEGACY = 'http://127.0.0.1:3000';
+let lastSeq = 0;
+
+async function send(obj) {
+  try {
+    await fetch(`${LEGACY}/deck-event`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(obj),
+    });
+  } catch { /* she may be restarting; the next event will get through */ }
+}
+
+async function poll() {
+  try {
+    const r = await fetch(`${LEGACY}/deck?since=${lastSeq}&slots=${slots.size}`);
+    const d = await r.json();
+    lastSeq = d.seq ?? lastSeq;
+    for (const cmd of d.commands ?? []) apply(cmd);
+  } catch { /* she is not running; try again shortly */ }
+  setTimeout(poll, 500);
+}
+
+function apply(m) {
+  // Either one key, or every key she knows about.
+  const targets = m.context ? [m.context] : [...slots.keys()];
+  for (const ctx of targets) {
+    if (m.image !== undefined) {
+      sd?.send(JSON.stringify({ event: 'setImage', context: ctx,
+        payload: { image: m.image, target: 0 } }));
+    }
+    if (m.title !== undefined) {
+      sd?.send(JSON.stringify({ event: 'setTitle', context: ctx,
+        payload: { title: String(m.title).slice(0, 40), target: 0 } }));
+    }
+  }
+}
+</script>
